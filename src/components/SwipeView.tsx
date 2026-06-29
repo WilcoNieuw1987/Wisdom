@@ -27,12 +27,13 @@ const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: "notitie",    label: "📝 Notities" },
 ];
 
-type AiMode = "actions" | "rewrite" | "insight";
+type AiMode = "actions" | "rewrite" | "insight" | "thread";
 type AiResult = {
   mode: AiMode;
   actions?: string[];
   rewrite?: { title: string; content: string };
   insight?: string;
+  thread?: string;
 };
 
 function timeAgo(date: Date): string {
@@ -81,7 +82,8 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
     if (!current) return;
     setAiLoading(mode);
     try {
-      const res = await fetch(`/api/ai/${mode === "actions" ? "actions" : mode === "rewrite" ? "rewrite" : "insight"}`, {
+      const endpoint = { actions: "actions", rewrite: "rewrite", insight: "insight", thread: "thread" }[mode];
+      const res = await fetch(`/api/ai/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ noteId: current.id }),
@@ -90,7 +92,8 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
 
       if (mode === "actions") setAiResult({ mode, actions: data.actions });
       else if (mode === "rewrite") setAiResult({ mode, rewrite: data });
-      else setAiResult({ mode, insight: data.insight });
+      else if (mode === "insight") setAiResult({ mode, insight: data.insight });
+      else setAiResult({ mode, thread: data.thread });
     } finally {
       setAiLoading(null);
     }
@@ -121,9 +124,10 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
   }
 
   const AI_BUTTONS: { mode: AiMode; icon: string; label: string; color: string; bg: string }[] = [
-    { mode: "actions", icon: "⚡", label: "Actiepunten", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20" },
-    { mode: "insight", icon: "💡", label: "Inzicht",     color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20" },
-    { mode: "rewrite", icon: "🔄", label: "Herschrijven", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20" },
+    { mode: "actions", icon: "⚡", label: "Actiepunten",  color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20" },
+    { mode: "insight", icon: "💡", label: "Inzicht",      color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20" },
+    { mode: "rewrite", icon: "🔄", label: "Herschrijven", color: "text-green-400",  bg: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20" },
+    { mode: "thread",  icon: "🧵", label: "Rode draad",   color: "text-rose-300",   bg: "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20" },
   ];
 
   return (
@@ -241,8 +245,8 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
           </button>
         )}
 
-        {/* 3 AI-knoppen */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* 2×2 AI-grid */}
+        <div className="grid grid-cols-2 gap-2">
           {AI_BUTTONS.map(({ mode, icon, label, color, bg }) => (
             <button
               key={mode}

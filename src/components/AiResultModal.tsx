@@ -3,13 +3,14 @@
 import { enrichNote } from "@/lib/actions";
 import { useState } from "react";
 
-type AiMode = "actions" | "rewrite" | "insight";
+type AiMode = "actions" | "rewrite" | "insight" | "thread";
 
 interface AiResult {
   mode: AiMode;
   actions?: string[];
   rewrite?: { title: string; content: string };
   insight?: string;
+  thread?: string;
 }
 
 interface Props {
@@ -21,7 +22,8 @@ interface Props {
 const MODE_META: Record<AiMode, { icon: string; label: string; color: string }> = {
   actions: { icon: "⚡", label: "Actiepunten", color: "text-yellow-400" },
   rewrite: { icon: "🔄", label: "Herschreven", color: "text-green-400" },
-  insight: { icon: "💡", label: "Inzicht", color: "text-purple-400" },
+  insight: { icon: "💡", label: "Inzicht",     color: "text-purple-400" },
+  thread:  { icon: "🧵", label: "Rode draad",  color: "text-rose-300"   },
 };
 
 export function AiResultModal({ noteId, result, onClose }: Props) {
@@ -86,6 +88,13 @@ export function AiResultModal({ noteId, result, onClose }: Props) {
         {result.mode === "insight" && result.insight && (
           <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4">
             <p className="text-sm text-neutral-200 leading-relaxed italic">"{result.insight}"</p>
+          </div>
+        )}
+
+        {/* Rode draad */}
+        {result.mode === "thread" && result.thread && (
+          <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-5">
+            <p className="text-sm text-neutral-200 leading-relaxed">{result.thread}</p>
           </div>
         )}
 

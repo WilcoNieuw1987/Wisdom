@@ -227,6 +227,58 @@ Geef ALLEEN de tekst terug, geen inleiding.`,
   return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
 }
 
+export async function aiRedThread(noteId: string): Promise<string> {
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) return "";
+
+  // Verbonden notities via graph
+  const connections = await prisma.noteConnection.findMany({
+    where: { OR: [{ fromId: noteId }, { toId: noteId }] },
+    include: { from: true, to: true },
+    orderBy: { strength: "desc" },
+    take: 8,
+  });
+  const connectedByGraph = connections.map((c) =>
+    c.fromId === noteId ? c.to : c.from
+  );
+
+  // Notities uit hetzelfde cluster
+  const clusterNotes = note.cluster
+    ? await prisma.note.findMany({
+        where: { cluster: note.cluster, archived: false, id: { not: noteId } },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+      })
+    : [];
+
+  // Combineer en dedup
+  const all = [...connectedByGraph, ...clusterNotes].filter(
+    (n, i, arr) => arr.findIndex((x) => x.id === n.id) === i
+  ).slice(0, 10);
+
+  const relatedBlock = all.length
+    ? `\nGerelateerde notities:\n${all
+        .map((n) => `- [${n.type}] "${n.title}": ${(n.content || "").slice(0, 180)}`)
+        .join("\n")}`
+    : "";
+
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 350,
+    messages: [
+      {
+        role: "user",
+        content: `Je bent een directe, scherpe coach. Lees onderstaande notities en schrijf één krachtige synthese (3-5 zinnen) die de rode draad blootlegt: wat speelt hier werkelijk? Wat is het onderliggende patroon, de onuitgesproken spanning, of de verborgen kans? Wees specifiek en persoonlijk — geen algemeenheden, geen open deuren. Spring direct in de inhoud.
+
+Centrale notitie [${note.type}]: "${note.title}"
+${note.content || ""}${relatedBlock}`,
+      },
+    ],
+  });
+
+  return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function parseResponse(text: string): {
