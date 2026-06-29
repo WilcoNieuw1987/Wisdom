@@ -1,6 +1,48 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 
+export async function autoFill(raw: string): Promise<{
+  title: string;
+  type: "idee" | "frustratie" | "notitie";
+  tags: string;
+  content: string;
+}> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const res = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 256,
+    messages: [
+      {
+        role: "user",
+        content: `Verwerk deze werkaantekening. Geef alleen geldig JSON terug (geen markdown):
+
+"${raw}"
+
+{
+  "title": "beknopte titel, max 8 woorden",
+  "type": "idee" of "frustratie" of "notitie",
+  "tags": "komma-gescheiden trefwoorden, max 3",
+  "content": "originele tekst, eventueel iets compacter geschreven"
+}`,
+      },
+    ],
+  });
+  const text = res.content[0].type === "text" ? res.content[0].text : "";
+  const json = text.match(/\{[\s\S]*\}/)?.[0];
+  if (!json) return { title: raw.slice(0, 60), type: "notitie", tags: "", content: raw };
+  try {
+    const p = JSON.parse(json);
+    return {
+      title: p.title ?? raw.slice(0, 60),
+      type: ["idee", "frustratie", "notitie"].includes(p.type) ? p.type : "notitie",
+      tags: p.tags ?? "",
+      content: p.content ?? raw,
+    };
+  } catch {
+    return { title: raw.slice(0, 60), type: "notitie", tags: "", content: raw };
+  }
+}
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });

@@ -32,22 +32,22 @@ export function Filters({
     <div className="mt-6 space-y-3">
       <input
         defaultValue={q}
-        placeholder="Zoeken in titel, tekst, tags…"
+        placeholder="Zoeken…"
         onChange={(e) => {
           const v = e.target.value.trim();
           if (searchTimer.current) clearTimeout(searchTimer.current);
           searchTimer.current = setTimeout(() => setParam("q", v || null), 250);
         }}
-        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900"
+        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-2.5 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-600 transition"
       />
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <button
           onClick={() => setParam("type", null)}
           className={`rounded-full px-3 py-1 transition ${
             !activeType
-              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
+              ? "bg-white text-black font-semibold"
+              : "text-neutral-500 hover:text-white"
           }`}
         >
           Alles
@@ -58,23 +58,22 @@ export function Filters({
             onClick={() => setParam("type", activeType === t ? null : t)}
             className={`rounded-full px-3 py-1 transition ${
               activeType === t
-                ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
+                ? "bg-white text-black font-semibold"
+                : "text-neutral-500 hover:text-white"
             }`}
           >
             {TYPE_META[t].emoji} {TYPE_META[t].label}
             {countByType[t] ? (
-              <span className="ml-1 opacity-60">{countByType[t]}</span>
+              <span className="ml-1 opacity-50">{countByType[t]}</span>
             ) : null}
           </button>
         ))}
-
         <button
           onClick={() => setParam("view", showArchived ? null : "archief")}
           className={`ml-auto rounded-full px-3 py-1 transition ${
             showArchived
-              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
+              ? "bg-white text-black font-semibold"
+              : "text-neutral-500 hover:text-white"
           }`}
         >
           {showArchived ? "← Terug" : "Archief"}

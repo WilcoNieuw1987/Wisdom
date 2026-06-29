@@ -30,12 +30,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+        className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-8"
       >
-        <h1 className="text-2xl font-bold tracking-tight">Wisdom</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Wisdom</h1>
         <p className="mt-1 text-sm text-neutral-500">Vul je wachtwoord in.</p>
 
         <input
@@ -44,7 +44,7 @@ export default function LoginPage() {
           placeholder="Wachtwoord"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-6 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none focus:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800"
+          className="mt-6 w-full rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm text-white outline-none focus:border-neutral-500 transition"
         />
 
         {error && (
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading || !password}
-          className="mt-4 w-full rounded-lg bg-neutral-900 py-3 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
+          className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black hover:bg-neutral-200 disabled:opacity-30 transition"
         >
           {loading ? "Even wachten…" : "Inloggen"}
         </button>

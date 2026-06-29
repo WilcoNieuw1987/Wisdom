@@ -9,11 +9,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = {
-  q?: string;
-  type?: string;
-  view?: string; // "actief" (default) | "archief"
-};
+type SearchParams = { q?: string; type?: string; view?: string };
 
 export default async function Home({
   searchParams,
@@ -34,7 +30,7 @@ export default async function Home({
             { title: { contains: q } },
             { content: { contains: q } },
             { tags: { contains: q } },
-            { category: { contains: q } },
+            { cluster: { contains: q } },
           ],
         }
       : {}),
@@ -55,18 +51,17 @@ export default async function Home({
   ) as Record<string, number>;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-      <header className="mb-8 flex items-start justify-between">
+    <main className="mx-auto max-w-2xl px-4 py-10">
+      {/* Header */}
+      <header className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Wisdom</h1>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Je werkboekje — ideeën, frustraties en notities, geordend.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Wisdom</h1>
+          <p className="text-xs text-neutral-600 mt-0.5">je tweede brein, geordend door AI</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/graph"
-            className="rounded-lg bg-neutral-100 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            className="rounded-xl border border-neutral-800 px-3 py-1.5 text-xs text-neutral-400 hover:border-neutral-600 hover:text-white transition"
           >
             🕸 Graph
           </Link>
@@ -74,8 +69,10 @@ export default async function Home({
         </div>
       </header>
 
-      <NoteForm types={[...NOTE_TYPES]} />
+      {/* Input */}
+      <NoteForm />
 
+      {/* Filters */}
       <Filters
         activeType={type}
         q={q}
@@ -83,14 +80,15 @@ export default async function Home({
         countByType={countByType}
       />
 
-      <section className="mt-6 space-y-3">
+      {/* Notes */}
+      <section className="mt-5 space-y-3">
         {notes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-neutral-300 px-4 py-10 text-center text-sm text-neutral-500 dark:border-neutral-700">
+          <p className="rounded-2xl border border-dashed border-neutral-800 px-4 py-12 text-center text-sm text-neutral-600">
             {showArchived
               ? "Geen gearchiveerde aantekeningen."
               : q || type
-                ? "Niets gevonden met deze filters."
-                : "Nog geen aantekeningen. Schrijf je eerste hierboven."}
+                ? "Niets gevonden."
+                : "Typ hierboven wat er in je hoofd zit. AI doet de rest."}
           </p>
         ) : (
           notes.map((note) => (
