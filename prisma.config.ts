@@ -10,7 +10,11 @@ export default defineConfig({
   },
   datasource: {
     // Migraties draaien bij voorkeur over een directe (niet-gepoolde) verbinding.
-    // Neon/Vercel zet die in DATABASE_URL_UNPOOLED; lokaal valt het terug op DATABASE_URL.
-    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
+    // Vercel's Neon-integratie gebruikt een `wisdom_`-prefix; lokaal de kale naam.
+    url:
+      process.env["DATABASE_URL_UNPOOLED"] ??
+      process.env["wisdom_DATABASE_URL_UNPOOLED"] ??
+      process.env["DATABASE_URL"] ??
+      process.env["wisdom_DATABASE_URL"],
   },
 });
