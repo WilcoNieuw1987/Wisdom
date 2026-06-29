@@ -86,8 +86,8 @@ export default async function Home({
         countByType={countByType}
       />
 
-      {/* Notes */}
-      <section className="mt-5 space-y-3">
+      {/* Notes — masonry grid */}
+      <section className="mt-5">
         {notes.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-neutral-800 px-4 py-12 text-center text-sm text-neutral-600">
             {showArchived
@@ -97,9 +97,11 @@ export default async function Home({
                 : "Typ hierboven wat er in je hoofd zit. AI doet de rest."}
           </p>
         ) : (
-          notes.map((note) => (
-            <NoteCard key={note.id} note={note} types={[...NOTE_TYPES]} />
-          ))
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+            {notes.map((note) => (
+              <NoteCard key={note.id} note={note} types={[...NOTE_TYPES]} />
+            ))}
+          </div>
         )}
       </section>
     </main>

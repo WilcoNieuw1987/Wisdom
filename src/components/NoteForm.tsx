@@ -6,14 +6,12 @@ import { createNote } from "@/lib/actions";
 export function NoteForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [focused, setFocused] = useState(false);
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   function insertText(text: string) {
     setValue((prev) => (prev ? prev + "\n\n" + text : text));
-    setFocused(true);
     setTimeout(() => textareaRef.current?.focus(), 0);
   }
 
@@ -23,105 +21,69 @@ export function NoteForm() {
   }
 
   function handleDragLeave(e: React.DragEvent) {
-    // Only clear when leaving the form entirely
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDragging(false);
-    }
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false);
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    const textFile = files.find(
-      (f) =>
-        f.type.startsWith("text/") ||
-        f.name.endsWith(".md") ||
-        f.name.endsWith(".txt")
+    const file = Array.from(e.dataTransfer.files).find(
+      (f) => f.type.startsWith("text/") || f.name.endsWith(".md") || f.name.endsWith(".txt")
     );
-
-    if (textFile) {
+    if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        const text = (ev.target?.result as string) ?? "";
-        if (text.trim()) insertText(text.trim());
-      };
-      reader.readAsText(textFile);
+      reader.onload = (ev) => insertText(((ev.target?.result as string) ?? "").trim());
+      reader.readAsText(file);
       return;
     }
-
     const text = e.dataTransfer.getData("text/plain");
     if (text.trim()) insertText(text.trim());
+  }
+
+  async function submit() {
+    if (!value.trim() || saving) return;
+    setSaving(true);
+    const fd = new FormData();
+    fd.set("raw", value);
+    await createNote(fd);
+    setValue("");
+    setSaving(false);
+    textareaRef.current?.focus();
   }
 
   return (
     <form
       ref={formRef}
-      action={async (fd) => {
-        setSaving(true);
-        await createNote(fd);
-        setValue("");
-        setSaving(false);
-        setFocused(false);
-        formRef.current?.reset();
-      }}
-      className="relative"
+      onSubmit={(e) => { e.preventDefault(); submit(); }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      className="relative"
     >
-      <div className="relative">
+      <div className={`flex rounded-2xl border bg-neutral-900 transition-all ${dragging ? "border-amber-500 shadow-amber-500/20 shadow-lg" : "border-neutral-800 focus-within:border-neutral-600"}`}>
         <textarea
           ref={textareaRef}
           name="raw"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onFocus={() => setFocused(true)}
-          placeholder={dragging ? "Laat los om in te voegen…" : "Wat zit er in je hoofd?"}
-          rows={focused || dragging ? 5 : 2}
-          className={`w-full resize-none rounded-2xl border bg-neutral-900 px-5 py-4 text-white placeholder:text-neutral-600 outline-none transition-all duration-200 ${
-            dragging
-              ? "border-amber-500 shadow-lg shadow-amber-500/20"
-              : focused
-              ? "border-neutral-600 shadow-lg shadow-black/40"
-              : "border-neutral-800"
-          }`}
+          onKeyDown={(e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); submit(); }
+          }}
+          placeholder={dragging ? "Laat los om in te voegen…" : "Wat zit er in je hoofd? (Ctrl+Enter om op te slaan)"}
+          rows={3}
+          className="flex-1 resize-none bg-transparent px-4 py-3.5 text-sm text-white placeholder:text-neutral-600 outline-none"
         />
-        {dragging && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl">
-            <span className="text-xs text-amber-400">↓ Sleep tekst of bestand hier naartoe</span>
-          </div>
-        )}
-      </div>
-
-      {(focused || value) && !dragging && (
-        <div className="mt-2 flex items-center justify-between px-1">
-          <p className="text-xs text-neutral-600">
-            ✦ AI detecteert type · genereert titel · koppelt aan thema's
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setValue("");
-                setFocused(false);
-                formRef.current?.reset();
-              }}
-              className="rounded-xl px-3 py-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition"
-            >
-              Annuleer
-            </button>
-            <button
-              type="submit"
-              disabled={!value.trim() || saving}
-              className="rounded-xl bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-neutral-200 disabled:opacity-30 transition"
-            >
-              {saving ? "Verwerken…" : "Opslaan ↵"}
-            </button>
-          </div>
+        <div className="flex flex-col justify-between p-2">
+          <span className="text-[10px] text-neutral-700 text-right px-1 pt-1">✦ AI</span>
+          <button
+            type="submit"
+            disabled={!value.trim() || saving}
+            className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-neutral-200 disabled:opacity-25 transition"
+          >
+            {saving ? "…" : "↵"}
+          </button>
         </div>
-      )}
+      </div>
     </form>
   );
 }
