@@ -4,6 +4,7 @@ import { NoteForm } from "@/components/NoteForm";
 import { NoteCard } from "@/components/NoteCard";
 import { Filters } from "@/components/Filters";
 import { LogoutButton } from "@/components/LogoutButton";
+import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,15 @@ export default async function Home({
             Je werkboekje — ideeën, frustraties en notities, geordend.
           </p>
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/graph"
+            className="rounded-lg bg-neutral-100 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          >
+            🕸 Graph
+          </Link>
+          <LogoutButton />
+        </div>
       </header>
 
       <NoteForm types={[...NOTE_TYPES]} />

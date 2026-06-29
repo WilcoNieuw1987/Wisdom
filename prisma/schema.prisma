@@ -10,22 +10,43 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Eén aantekening: een idee, een frustratie om van je af te schrijven, of een gewone notitie.
 model Note {
   id        String   @id @default(cuid())
   title     String
   content   String   @default("")
-  /// type: "idee" | "frustratie" | "notitie"
   type      String   @default("notitie")
   category  String?
-  /// komma-gescheiden labels, bijv. "klant,proces,urgent"
   tags      String   @default("")
+  cluster   String?  // door AI toegewezen clusternaam
   pinned    Boolean  @default(false)
   archived  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  connectionsFrom NoteConnection[] @relation("fromNote")
+  connectionsTo   NoteConnection[] @relation("toNote")
+
   @@index([type])
   @@index([archived])
   @@index([createdAt])
+  @@index([cluster])
+}
+
+// Verbinding tussen twee notities, aangemaakt door AI
+model NoteConnection {
+  id       String @id @default(cuid())
+  fromId   String
+  toId     String
+  // korte uitleg waarom deze twee verwant zijn
+  reason   String @default("")
+  strength Float  @default(0.5) // 0..1
+
+  from Note @relation("fromNote", fields: [fromId], references: [id], onDelete: Cascade)
+  to   Note @relation("toNote",   fields: [toId],   references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([fromId, toId])
+  @@index([fromId])
+  @@index([toId])
 }

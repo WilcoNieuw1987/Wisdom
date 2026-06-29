@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { isNoteType, parseTags } from "@/lib/types";
+import { analyzeAndConnect } from "@/lib/ai";
 
 function normalizeTags(raw: string): string {
   return parseTags(raw).join(",");
@@ -17,7 +18,7 @@ export async function createNote(formData: FormData) {
 
   if (!title && !content) return;
 
-  await prisma.note.create({
+  const note = await prisma.note.create({
     data: {
       title: title || "(zonder titel)",
       content,
@@ -26,6 +27,9 @@ export async function createNote(formData: FormData) {
       tags,
     },
   });
+
+  // AI-analyse op de achtergrond — niet awaiten zodat de UI snel reageert
+  analyzeAndConnect(note.id).catch(console.error);
 
   revalidatePath("/");
 }
@@ -47,6 +51,8 @@ export async function updateNote(id: string, formData: FormData) {
       tags,
     },
   });
+
+  analyzeAndConnect(id).catch(console.error);
 
   revalidatePath("/");
 }
