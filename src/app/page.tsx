@@ -53,26 +53,33 @@ export default async function Home({
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       {/* Header */}
-      <header className="mb-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Wisdom</h1>
-          <p className="text-xs text-neutral-600 mt-0.5">je tweede brein, geordend door AI</p>
+      <header className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Wisdom</h1>
+            <p className="text-xs text-neutral-600 mt-0.5">je tweede brein, geordend door AI</p>
+          </div>
+          <LogoutButton />
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Segmented nav */}
+        <nav className="mt-5 inline-flex rounded-xl border border-neutral-800 bg-neutral-900 p-1 text-xs">
+          <span className="rounded-lg bg-white px-3 py-1.5 font-semibold text-black">
+            📝 Lijst
+          </span>
           <Link
             href="/swipe"
-            className="rounded-xl border border-neutral-800 px-3 py-1.5 text-xs text-neutral-400 hover:border-neutral-600 hover:text-white transition"
+            className="rounded-lg px-3 py-1.5 text-neutral-400 hover:text-white transition"
           >
-            📱
+            📱 Swipe
           </Link>
           <Link
             href="/graph"
-            className="rounded-xl border border-neutral-800 px-3 py-1.5 text-xs text-neutral-400 hover:border-neutral-600 hover:text-white transition"
+            className="rounded-lg px-3 py-1.5 text-neutral-400 hover:text-white transition"
           >
-            🕸
+            🕸 Graph
           </Link>
-          <LogoutButton />
-        </div>
+        </nav>
       </header>
 
       {/* Input */}
