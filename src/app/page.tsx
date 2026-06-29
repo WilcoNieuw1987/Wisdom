@@ -3,6 +3,7 @@ import { NOTE_TYPES, isNoteType } from "@/lib/types";
 import { NoteForm } from "@/components/NoteForm";
 import { NoteCard } from "@/components/NoteCard";
 import { Filters } from "@/components/Filters";
+import { LogoutButton } from "@/components/LogoutButton";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -54,11 +55,14 @@ export default async function Home({
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Wisdom</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Je werkboekje — ideeën, frustraties en notities, geordend.
-        </p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Wisdom</h1>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            Je werkboekje — ideeën, frustraties en notities, geordend.
+          </p>
+        </div>
+        <LogoutButton />
       </header>
 
       <NoteForm types={[...NOTE_TYPES]} />
