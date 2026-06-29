@@ -154,6 +154,81 @@ Regels:
 - De cluster is het overkoepelende thema van deze aantekening`;
 }
 
+// ─── Extra AI functies ────────────────────────────────────────────────────────
+
+export async function aiExtractActions(noteId: string): Promise<string[]> {
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) return [];
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 400,
+    messages: [{
+      role: "user",
+      content: `Je bent een productiviteitscoach. Extraheer 3-5 concrete, uitvoerbare actiepunten uit deze werkaantekening. Wees specifiek — geen vage adviezen.
+
+Type: ${note.type} | Titel: ${note.title}
+Inhoud: ${note.content || note.title}
+
+Geef ALLEEN een JSON array terug: ["Actie 1", "Actie 2", ...]`,
+    }],
+  });
+  const text = msg.content[0].type === "text" ? msg.content[0].text : "[]";
+  try { return JSON.parse(text.match(/\[[\s\S]*\]/)?.[0] ?? "[]"); } catch { return []; }
+}
+
+export async function aiRewrite(noteId: string): Promise<{ title: string; content: string }> {
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) throw new Error("Niet gevonden");
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 600,
+    messages: [{
+      role: "user",
+      content: `Herschrijf deze werkaantekening. Maak de titel pakkend (max 8 woorden) en de inhoud helderder, gestructureerder en actiegerichter. Behoud de kern.
+
+Type: ${note.type} | Titel: ${note.title}
+Inhoud: ${note.content || ""}
+
+Geef ALLEEN JSON terug: {"title": "...", "content": "..."}`,
+    }],
+  });
+  const text = msg.content[0].type === "text" ? msg.content[0].text : "{}";
+  try {
+    const p = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
+    return { title: p.title || note.title, content: p.content || note.content };
+  } catch { return { title: note.title, content: note.content }; }
+}
+
+export async function aiInsight(noteId: string): Promise<string> {
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) return "";
+  const connections = await prisma.noteConnection.findMany({
+    where: { OR: [{ fromId: noteId }, { toId: noteId }] },
+    include: { from: true, to: true },
+    take: 3,
+  });
+  const context = connections
+    .map((c) => `- ${(c.fromId === noteId ? c.to : c.from).title}: ${c.reason}`)
+    .join("\n");
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    messages: [{
+      role: "user",
+      content: `Je bent een scherpe denker. Geef één verrassend inzicht, onverwachte hoek, of cruciale vraag bij deze werkaantekening. Max 3 zinnen. Wees specifiek — geen open deuren.
+
+${note.type}: "${note.title}"
+${note.content ? note.content.slice(0, 400) : ""}
+${context ? `\nVerbonden met:\n${context}` : ""}
+
+Geef ALLEEN de tekst terug, geen inleiding.`,
+    }],
+  });
+  return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function parseResponse(text: string): {
   cluster?: string;
   connections: { toId: string; reason: string; strength: number }[];
