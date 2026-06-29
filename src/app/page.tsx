@@ -60,10 +60,16 @@ export default async function Home({
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/swipe"
+            className="rounded-xl border border-neutral-800 px-3 py-1.5 text-xs text-neutral-400 hover:border-neutral-600 hover:text-white transition"
+          >
+            📱
+          </Link>
+          <Link
             href="/graph"
             className="rounded-xl border border-neutral-800 px-3 py-1.5 text-xs text-neutral-400 hover:border-neutral-600 hover:text-white transition"
           >
-            🕸 Graph
+            🕸
           </Link>
           <LogoutButton />
         </div>
