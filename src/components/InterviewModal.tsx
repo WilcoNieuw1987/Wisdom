@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { enrichNote } from "@/lib/actions";
+import { enrichNote, savePartialInterview } from "@/lib/actions";
 import type { InterviewMessage, InterviewResponse } from "@/app/api/interview/route";
 
 type Props = {
@@ -25,6 +25,40 @@ export function InterviewModal({ noteId, title, content, onClose }: Props) {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [started, setStarted] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  // Derive Q&A pairs from history for partial save
+  function getQAPairs() {
+    const pairs: { question: string; answer: string }[] = [];
+    for (let i = 0; i < history.length - 1; i++) {
+      const msg = history[i];
+      const next = history[i + 1];
+      if ("type" in msg && msg.type === "question" && "answer" in next) {
+        pairs.push({ question: msg.text, answer: next.answer });
+      }
+    }
+    // Also include current question if user has started answering
+    if (current && openAnswer.trim()) {
+      pairs.push({ question: current.text, answer: openAnswer.trim() });
+    }
+    return pairs;
+  }
+
+  function handleCloseRequest() {
+    // If interview is active (started, not yet done), ask to save partial
+    if (started && !done) {
+      setConfirmClose(true);
+    } else {
+      onClose();
+    }
+  }
+
+  async function handlePartialSave() {
+    const pairs = getQAPairs();
+    setSaving(true);
+    await savePartialInterview(noteId, pairs);
+    onClose();
+  }
 
   async function ask(nextHistory: InterviewMessage[]) {
     setLoading(true);
@@ -72,7 +106,7 @@ export function InterviewModal({ noteId, title, content, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="relative w-full max-w-lg rounded-2xl border border-neutral-700 bg-neutral-900 p-6 shadow-2xl">
         <button
-          onClick={onClose}
+          onClick={handleCloseRequest}
           className="absolute right-4 top-4 text-neutral-500 hover:text-white"
         >
           ✕
@@ -90,8 +124,39 @@ export function InterviewModal({ noteId, title, content, onClose }: Props) {
           )}
         </div>
 
+        {/* Bevestiging bij tussentijds afsluiten */}
+        {confirmClose && (
+          <div className="mt-6 rounded-xl border border-neutral-700 bg-neutral-800 p-4 space-y-3">
+            <p className="text-sm text-white font-medium">Interview afbreken?</p>
+            <p className="text-xs text-neutral-400">
+              Wat er al besproken is kan worden opgeslagen als aanvulling op je notitie.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePartialSave}
+                disabled={saving}
+                className="flex-1 rounded-xl bg-amber-500 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50"
+              >
+                {saving ? "Opslaan…" : "Sla tussenstand op"}
+              </button>
+              <button
+                onClick={onClose}
+                className="rounded-xl px-3 py-2 text-sm text-neutral-500 hover:text-rose-400 transition"
+              >
+                Weggooien
+              </button>
+            </div>
+            <button
+              onClick={() => setConfirmClose(false)}
+              className="text-xs text-neutral-600 hover:text-neutral-400 transition"
+            >
+              ← Toch doorgaan
+            </button>
+          </div>
+        )}
+
         {/* Niet gestart */}
-        {!started && (
+        {!started && !confirmClose && (
           <button
             onClick={start}
             className="mt-6 w-full rounded-xl bg-amber-500 py-3 font-medium text-white hover:bg-amber-400"
@@ -101,14 +166,14 @@ export function InterviewModal({ noteId, title, content, onClose }: Props) {
         )}
 
         {/* Laden */}
-        {loading && (
+        {loading && !confirmClose && (
           <div className="mt-6 flex items-center gap-2 text-sm text-neutral-400">
             <span className="animate-spin">⟳</span> Claude denkt na…
           </div>
         )}
 
         {/* Vraag */}
-        {!loading && current && (
+        {!loading && current && !confirmClose && (
           <div className="mt-6 space-y-4">
             <p className="font-medium text-white">{current.text}</p>
 
@@ -160,7 +225,7 @@ export function InterviewModal({ noteId, title, content, onClose }: Props) {
         )}
 
         {/* Klaar — toon verrijkt idee */}
-        {done && (
+        {done && !confirmClose && (
           <div className="mt-6 space-y-4">
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4">
               <p className="text-xs text-amber-400 mb-1">Verrijkt idee</p>

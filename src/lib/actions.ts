@@ -78,3 +78,22 @@ export async function enrichNote(
   analyzeAndConnect(id).catch(console.error);
   revalidatePath("/");
 }
+
+export async function savePartialInterview(
+  id: string,
+  qa: { question: string; answer: string }[]
+) {
+  if (!qa.length) return;
+  const note = await prisma.note.findUnique({ where: { id } });
+  if (!note) return;
+
+  const addendum = qa
+    .map(({ question, answer }) => `V: ${question}\nA: ${answer}`)
+    .join("\n\n");
+  const newContent = note.content
+    ? `${note.content}\n\n---\n${addendum}`
+    : addendum;
+
+  await prisma.note.update({ where: { id }, data: { content: newContent } });
+  revalidatePath("/");
+}
