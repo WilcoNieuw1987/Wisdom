@@ -71,3 +71,16 @@ export async function toggleArchive(id: string, archived: boolean) {
   await prisma.note.update({ where: { id }, data: { archived } });
   revalidatePath("/");
 }
+
+export async function enrichNote(
+  id: string,
+  enrichedTitle: string,
+  enrichedContent: string
+) {
+  await prisma.note.update({
+    where: { id },
+    data: { title: enrichedTitle, content: enrichedContent },
+  });
+  analyzeAndConnect(id).catch(console.error);
+  revalidatePath("/");
+}

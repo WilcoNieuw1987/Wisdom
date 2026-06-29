@@ -8,6 +8,7 @@ import {
   updateNote,
 } from "@/lib/actions";
 import { TYPE_META, parseTags, isNoteType, type NoteType } from "@/lib/types";
+import { InterviewModal } from "@/components/InterviewModal";
 
 type Note = {
   id: string;
@@ -34,6 +35,7 @@ function formatDate(d: Date) {
 
 export function NoteCard({ note, types }: { note: Note; types: NoteType[] }) {
   const [editing, setEditing] = useState(false);
+  const [interviewing, setInterviewing] = useState(false);
   const meta = isNoteType(note.type) ? TYPE_META[note.type] : TYPE_META.notitie;
   const tags = parseTags(note.tags);
 
@@ -120,6 +122,15 @@ export function NoteCard({ note, types }: { note: Note; types: NoteType[] }) {
         </div>
 
         <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
+          {note.type === "idee" && (
+            <button
+              title="Interview-modus: idee uitwerken"
+              onClick={() => setInterviewing(true)}
+              className="rounded p-1.5 text-sm hover:bg-amber-100 dark:hover:bg-amber-950"
+            >
+              🎙️
+            </button>
+          )}
           <button
             title={note.pinned ? "Losmaken" : "Vastpinnen"}
             onClick={() => togglePin(note.id, !note.pinned)}
@@ -171,6 +182,15 @@ export function NoteCard({ note, types }: { note: Note; types: NoteType[] }) {
         ))}
         <span className="ml-auto">{formatDate(note.updatedAt)}</span>
       </div>
+
+      {interviewing && (
+        <InterviewModal
+          noteId={note.id}
+          title={note.title}
+          content={note.content}
+          onClose={() => setInterviewing(false)}
+        />
+      )}
     </article>
   );
 }
