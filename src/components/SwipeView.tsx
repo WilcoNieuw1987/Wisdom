@@ -93,6 +93,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
   const [interviewOpen, setInterviewOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState<AiMode | null>(null);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [anim, setAnim] = useState<"next" | "prev" | null>(null);
   const [, startTransition] = useTransition();
 
   // Sleep-status (via refs om stale closures te vermijden)
@@ -108,6 +109,9 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
   const current = filtered[idx] ?? null;
   const prev = idx > 0 ? filtered[idx - 1] : null;
   const next = idx < filtered.length - 1 ? filtered[idx + 1] : null;
+
+  function goNext() { if (next) { setAnim("next"); setCurrentIndex(idx + 1); } }
+  function goPrev() { if (prev) { setAnim("prev"); setCurrentIndex(idx - 1); } }
 
   function hitTest(x: number, y: number): BoxId | null {
     for (const [id, el] of Object.entries(boxRefs.current)) {
@@ -142,8 +146,8 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
     if (dragAxis.current === "h" && hovered) {
       execute(hovered);
     } else if (dragAxis.current === "v") {
-      if (dy < -55 && next) setCurrentIndex(idx + 1);
-      if (dy > 55 && prev) setCurrentIndex(idx - 1);
+      if (dy < -55) goNext();
+      if (dy > 55) goPrev();
     }
     dragStart.current = null;
     dragAxis.current = null;
@@ -200,7 +204,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
     >
       {/* ── Header / menu ── */}
       <div
-        className="flex items-center gap-2 px-3 border-b border-neutral-900 shrink-0"
+        className="flex w-full max-w-xl mx-auto items-center gap-2 px-3 border-b border-neutral-900 shrink-0"
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))", paddingBottom: "10px" }}
       >
         <Link href="/" className="shrink-0 text-neutral-600 hover:text-white transition text-lg leading-none">←</Link>
@@ -208,7 +212,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
           {FILTER_OPTIONS.map((f) => (
             <button
               key={f.value ?? "all"}
-              onClick={() => { setFilterType(f.value); setCurrentIndex(0); }}
+              onClick={() => { setFilterType(f.value); setCurrentIndex(0); setAnim(null); }}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                 filterType === f.value ? "bg-white text-black" : "text-neutral-500 hover:text-white"
               }`}
@@ -223,7 +227,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
       </div>
 
       {/* ── 3-koloms grid: functies | notitie | functies ── */}
-      <div className="flex-1 flex gap-2 p-2 min-h-0">
+      <div className="flex-1 flex w-full max-w-xl mx-auto gap-2 p-2 min-h-0">
         {/* Linkerkolom */}
         <div className="flex w-[68px] shrink-0 flex-col gap-2">
           {LEFT_BOXES.map((box) => (
@@ -243,7 +247,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
         <div className="flex flex-1 flex-col gap-2 min-w-0">
           {/* Vorige */}
           <button
-            onClick={() => prev && setCurrentIndex(idx - 1)}
+            onClick={goPrev}
             disabled={!prev}
             className={`shrink-0 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-left transition ${
               prev ? "opacity-30 active:opacity-60" : "opacity-0 pointer-events-none"
@@ -259,6 +263,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
 
           {/* Huidige notitie — sleepbaar */}
           <div
+            key={current ? current.id : "empty"}
             onPointerDown={current ? onPointerDown : undefined}
             onPointerMove={current ? onPointerMove : undefined}
             onPointerUp={current ? onPointerUp : undefined}
@@ -267,7 +272,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
               draggingH
                 ? "border-neutral-600 bg-neutral-800 scale-95 opacity-70"
                 : "border-neutral-700 bg-neutral-900"
-            }`}
+            } ${anim === "next" ? "anim-next" : anim === "prev" ? "anim-prev" : ""}`}
             style={{ touchAction: "none", cursor: draggingH ? "grabbing" : current ? "grab" : "default" }}
           >
             {current ? (
@@ -331,7 +336,7 @@ export function SwipeView({ initialNotes }: { initialNotes: Note[] }) {
 
           {/* Volgende */}
           <button
-            onClick={() => next && setCurrentIndex(idx + 1)}
+            onClick={goNext}
             disabled={!next}
             className={`shrink-0 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-left transition ${
               next ? "opacity-30 active:opacity-60" : "opacity-0 pointer-events-none"
