@@ -39,7 +39,7 @@ export function LearningImport({ onDone }: { onDone?: () => void }) {
       <div>
         <h3 className="text-sm font-semibold text-white">JSON importeren</h3>
         <p className="mt-0.5 text-xs text-neutral-500">
-          Plak een array met velden <code className="text-neutral-400">title, insight, evidence, action, category, tags</code>. Alleen <code className="text-neutral-400">title</code> is verplicht.
+          Plak een array, óf een object met een <code className="text-neutral-400">learnings</code>-array (buitenste <code className="text-neutral-400">category</code>/<code className="text-neutral-400">source</code> gelden dan als default). Alleen <code className="text-neutral-400">title</code> is verplicht.
         </p>
       </div>
       <textarea

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { isNoteType } from "@/lib/types";
 import { analyzeAndConnect, autoFill, clusterLearning } from "@/lib/ai";
-import { normalizeImportItem, tagsToString, type LearningImportItem } from "@/lib/learnings";
+import { normalizeImportItem, extractImportItems, tagsToString } from "@/lib/learnings";
 
 export async function createNote(formData: FormData) {
   const raw = String(formData.get("raw") ?? "").trim();
@@ -163,12 +163,14 @@ export async function importLearnings(
   } catch {
     return { error: "Ongeldige JSON." };
   }
-  if (!Array.isArray(data)) {
-    return { error: "JSON moet een array van learnings zijn." };
+
+  const extracted = extractImportItems(data);
+  if (!extracted) {
+    return { error: "JSON moet een array van learnings zijn, of een object met een 'learnings'-array." };
   }
 
-  const rows = (data as LearningImportItem[])
-    .map(normalizeImportItem)
+  const rows = extracted.items
+    .map((item) => normalizeImportItem(item, extracted.defaults))
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
   if (rows.length === 0) {

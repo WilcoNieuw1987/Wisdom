@@ -70,11 +70,15 @@ export const CATEGORY_COLOR: Record<string, string> = {
   Algemeen: "neutral",
 };
 
-// Normaliseer één import-item naar DB-velden (zonder id/timestamps)
-export function normalizeImportItem(item: LearningImportItem) {
+// Normaliseer één import-item naar DB-velden (zonder id/timestamps).
+// `defaults` vangt velden die op wrapper-niveau staan (bv. category/source).
+export function normalizeImportItem(
+  item: LearningImportItem,
+  defaults?: { category?: string; source?: string }
+) {
   const title = String(item.title ?? "").trim();
   if (!title) return null;
-  const category = item.category?.trim() || "Algemeen";
+  const category = item.category?.trim() || defaults?.category?.trim() || "Algemeen";
   let date = new Date();
   if (item.date) {
     const parsed = new Date(item.date);
@@ -87,7 +91,31 @@ export function normalizeImportItem(item: LearningImportItem) {
     action: item.action?.toString().trim() || null,
     category,
     tags: tagsToString(item.tags),
-    source: item.source?.toString().trim() || null,
+    source: item.source?.toString().trim() || defaults?.source?.trim() || null,
     date,
   };
+}
+
+// Haal de lijst learnings + wrapper-defaults uit een geparste JSON-waarde.
+// Accepteert zowel een platte array als een object met een `learnings`-array.
+export function extractImportItems(data: unknown): {
+  items: LearningImportItem[];
+  defaults: { category?: string; source?: string };
+} | null {
+  if (Array.isArray(data)) {
+    return { items: data as LearningImportItem[], defaults: {} };
+  }
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.learnings)) {
+      return {
+        items: obj.learnings as LearningImportItem[],
+        defaults: {
+          category: typeof obj.category === "string" ? obj.category : undefined,
+          source: typeof obj.source === "string" ? obj.source : undefined,
+        },
+      };
+    }
+  }
+  return null;
 }
