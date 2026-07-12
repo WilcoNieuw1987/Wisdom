@@ -279,6 +279,107 @@ ${note.content || ""}${relatedBlock}`,
   return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
 }
 
+// ─── Learnings ──────────────────────────────────────────────────────────────
+
+// Wijs op de achtergrond een cluster (thema) toe aan een learning
+export async function clusterLearning(learningId: string) {
+  const learning = await prisma.learning.findUnique({ where: { id: learningId } });
+  if (!learning) return;
+
+  const others = await prisma.learning.findMany({
+    where: { id: { not: learningId } },
+    select: { cluster: true },
+    take: 60,
+  });
+  const existingClusters = [...new Set(others.map((o) => o.cluster).filter(Boolean))];
+
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 40,
+    messages: [
+      {
+        role: "user",
+        content: `Wijs een kort thema (2-3 woorden, Nederlands) toe aan deze learning. ${
+          existingClusters.length
+            ? `Hergebruik indien passend een bestaand thema: ${existingClusters.join(", ")}.`
+            : ""
+        }
+
+Categorie: ${learning.category}
+Titel: ${learning.title}
+Inzicht: ${learning.insight}
+
+Geef ALLEEN het thema terug, niets anders.`,
+      },
+    ],
+  });
+  const cluster = msg.content[0].type === "text" ? msg.content[0].text.trim().slice(0, 40) : "";
+  if (cluster) {
+    await prisma.learning.update({ where: { id: learningId }, data: { cluster } });
+  }
+}
+
+export async function aiLearningInsight(learningId: string): Promise<string> {
+  const learning = await prisma.learning.findUnique({ where: { id: learningId } });
+  if (!learning) return "";
+  const related = await prisma.learning.findMany({
+    where: { id: { not: learningId }, category: learning.category },
+    orderBy: { date: "desc" },
+    take: 6,
+  });
+  const context = related
+    .map((l) => `- ${l.title}: ${l.insight}`)
+    .join("\n");
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    messages: [
+      {
+        role: "user",
+        content: `Je bent een scherpe coach. Geef één verrassend inzicht of cruciale vraag bij deze learning. Max 3 zinnen, specifiek, geen open deuren.
+
+Categorie ${learning.category} — "${learning.title}"
+Inzicht: ${learning.insight}
+${learning.evidence ? `Bewijs: ${learning.evidence}` : ""}
+${context ? `\nVerwante learnings:\n${context}` : ""}
+
+Geef ALLEEN de tekst terug.`,
+      },
+    ],
+  });
+  return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+}
+
+export async function aiLearningThread(learningId: string): Promise<string> {
+  const learning = await prisma.learning.findUnique({ where: { id: learningId } });
+  if (!learning) return "";
+  const related = await prisma.learning.findMany({
+    where: {
+      id: { not: learningId },
+      OR: [{ category: learning.category }, { cluster: learning.cluster ?? "___none___" }],
+    },
+    orderBy: { date: "desc" },
+    take: 10,
+  });
+  const block = related.length
+    ? `\nVerwante learnings:\n${related.map((l) => `- [${l.category}] ${l.title}: ${l.insight}`).join("\n")}`
+    : "";
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 350,
+    messages: [
+      {
+        role: "user",
+        content: `Je bent een directe coach. Lees deze learnings en schrijf één krachtige synthese (3-5 zinnen): wat is de rode draad, het onderliggende patroon of de verborgen kans? Wees specifiek en persoonlijk.
+
+Centrale learning [${learning.category}]: "${learning.title}"
+${learning.insight}${block}`,
+      },
+    ],
+  });
+  return msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function parseResponse(text: string): {

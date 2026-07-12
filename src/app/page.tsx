@@ -79,6 +79,12 @@ export default async function Home({
           >
             🕸 Graph
           </Link>
+          <Link
+            href="/learnings"
+            className="rounded-lg px-3 py-1.5 text-neutral-400 hover:text-white transition"
+          >
+            🏃 Learnings
+          </Link>
         </nav>
       </header>
 

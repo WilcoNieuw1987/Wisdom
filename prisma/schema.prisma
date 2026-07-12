@@ -32,6 +32,26 @@ model Note {
   @@index([cluster])
 }
 
+// Gestructureerde learning (bv. hardloop-inzichten)
+model Learning {
+  id        String   @id @default(cuid())
+  title     String
+  insight   String   @default("")
+  evidence  String?  // optioneel bewijs / onderbouwing
+  action    String?  // optionele vervolgactie
+  category  String   @default("Algemeen")
+  tags      String   @default("") // comma-gescheiden, consistent met Note
+  source    String?  // bv. "RUNALYZE"
+  cluster   String?  // door AI toegewezen thema
+  date      DateTime @default(now()) // wanneer de learning geldt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([cluster])
+  @@index([date])
+}
+
 // Verbinding tussen twee notities, aangemaakt door AI
 model NoteConnection {
   id       String @id @default(cuid())
